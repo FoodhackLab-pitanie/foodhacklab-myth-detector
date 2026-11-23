@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta property="og:title" content="FoodHackLab · Детектор мифов о сытости">
+<meta property="og:description" content="Десять раундов о сытости и переедании. Выберите разбор без таймера или блиц.">
+<title>FoodHackLab: Детектор мифов о сытости</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Unbounded:wght@600;700&display=swap">
+<link rel="stylesheet" href="styles.css">
+<script defer src="counter.js"></script>
+<script defer src="game.js"></script>
+</head>
+<body>
+<header>
+  <div><strong class="brand">🔬 FoodHackLab</strong><br><small>Наука сытости</small></div>
+  <div class="row"><a href="stats.html">Общий счётчик</a><button id="local" type="button" title="Мои результаты">📊 <span id="plays">0</span></button><button id="sound" type="button" aria-label="Звук" aria-pressed="true">🔊</button></div>
+</header>
+<main>
+  <section id="start" class="panel">
+    <span class="tag">Интерактивный тест · 10 раундов</span>
+    <h1>Детектор мифов о сытости и переедании</h1>
+    <p>Проверьте, сможете ли вы отличить устойчивые диетические заблуждения от реальных фудхаков.</p>
+    <div id="personal" class="grid"></div>
+    <div class="grid section-gap">
+      <button type="button" class="mode" data-mode="calm" aria-pressed="true">🧠 Вдумчивый разбор<small>Без таймера</small></button>
+      <button type="button" class="mode" data-mode="blitz" aria-pressed="false">⚡ Блиц-детектор<small>15 секунд на раунд</small></button>
+    </div>
+    <button id="begin" type="button" class="primary full section-gap">Начать проверку мифов →</button>
+  </section>
+  <section id="game" hidden>
+    <div class="panel row spread">
+      <strong id="round"></strong><span id="combo" class="tag" hidden></span>
+      <span id="clock" hidden><progress id="timeBar" max="15" value="15" aria-label="Осталось времени"></progress> <span id="seconds"></span></span>
+      <strong>Очки <span id="score">0</span></strong>
+    </div>
+    <div id="card" class="panel section-gap">
+      <div class="row spread"><span id="category" class="tag"></span><small>Свайп или клавиши ← / →</small></div>
+      <p class="question"><span id="emoji" class="illustration" aria-hidden="true"></span><span id="question"></span></p>
+      <div id="answers" class="grid">
+        <button type="button" id="myth" class="myth">✕ Это миф</button>
+        <button type="button" id="fact" class="fact">✓ Это факт</button>
+      </div>
+      <div id="feedback" hidden>
+        <h2 id="verdict" aria-live="polite"></h2><strong id="truth"></strong>
+        <p id="explanation"></p>
+        <div class="tile"><strong>💡 Фудхак на каждый день</strong><p id="tip"></p></div>
+        <button id="next" type="button" class="full section-gap">Следующий вопрос →</button>
+      </div>
+    </div>
+  </section>
+  <section id="result" class="panel" hidden>
+    <span class="tag">Ваш результат</span><h2 id="rank"></h2>
+    <div id="summary" class="grid"></div>
+    <h3>📋 Шпаргалка FoodHackLab</h3>
+    <ul id="cheat"></ul>
+    <div class="grid section-gap">
+      <button id="telegram" type="button">В Telegram</button>
+      <button id="vk" type="button">ВКонтакте</button>
+      <button id="copy" type="button">Скопировать результат</button>
+      <button id="restart" type="button" class="primary">↻ Ещё раз</button>
+    </div>
+    <p id="copyStatus" role="status"></p>
+  </section>
+  <dialog id="history" class="panel">
+    <form method="dialog" class="row spread"><h2>Мои результаты</h2><button aria-label="Закрыть">✕</button></form>
+    <div id="historySummary" class="grid"></div><ol id="runs"></ol>
+    <button id="clear" type="button">Сбросить историю</button>
+    <p><small>Результаты сохраняются в этом браузере.</small></p>
+    <a href="stats.html">Открыть общий счётчик игр</a>
+  </dialog>
+</main>
+<footer>FoodHackLab · Наука сытости</footer>
+</body>
+</html>
