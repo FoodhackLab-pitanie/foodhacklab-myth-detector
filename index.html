@@ -14,14 +14,13 @@
 <body>
 <header>
   <div><strong class="brand">🔬 FoodHackLab</strong><br><small>Наука сытости</small></div>
-  <div class="row"><a href="stats.html">Общий счётчик</a><button id="local" type="button" title="Мои результаты">📊 <span id="plays">0</span></button><button id="sound" type="button" aria-label="Звук" aria-pressed="true">🔊</button></div>
+  <button id="sound" type="button" aria-label="Звук" aria-pressed="true">🔊</button>
 </header>
 <main>
   <section id="start" class="panel">
     <span class="tag">Интерактивный тест · 10 раундов</span>
     <h1>Детектор мифов о сытости и переедании</h1>
     <p>Проверьте, сможете ли вы отличить устойчивые диетические заблуждения от реальных фудхаков.</p>
-    <div id="personal" class="grid"></div>
     <div class="grid section-gap">
       <button type="button" class="mode" data-mode="calm" aria-pressed="true">🧠 Вдумчивый разбор<small>Без таймера</small></button>
       <button type="button" class="mode" data-mode="blitz" aria-pressed="false">⚡ Блиц-детектор<small>15 секунд на раунд</small></button>
@@ -62,13 +61,6 @@
     </div>
     <p id="copyStatus" role="status"></p>
   </section>
-  <dialog id="history" class="panel">
-    <form method="dialog" class="row spread"><h2>Мои результаты</h2><button aria-label="Закрыть">✕</button></form>
-    <div id="historySummary" class="grid"></div><ol id="runs"></ol>
-    <button id="clear" type="button">Сбросить историю</button>
-    <p><small>Результаты сохраняются в этом браузере.</small></p>
-    <a href="stats.html">Открыть общий счётчик игр</a>
-  </dialog>
 </main>
 <footer>FoodHackLab · Наука сытости</footer>
 </body>

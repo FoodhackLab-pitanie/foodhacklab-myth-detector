@@ -50,10 +50,6 @@ const cheat = [
 ];
 
 const byId = id => document.getElementById(id);
-const storageKey = 'foodhacklab_myth_buster_stats_v2';
-const blank = () => ({ totalPlays: 0, calmPlays: 0, blitzPlays: 0, bestScore: 0, bestAccuracy: 0, totalCorrectSum: 0, recentRuns: [] });
-let stats = blank();
-try { stats = { ...stats, ...JSON.parse(localStorage.getItem(storageKey)) }; } catch {}
 let mode = 'calm';
 let round, score, correct, streak, bestStreak, answered, timer, deadline;
 let sound = true;
@@ -87,23 +83,6 @@ function tiles(target, entries) {
     tile.append(number, text);
     return tile;
   }));
-}
-
-function renderPersonal() {
-  byId('plays').textContent = stats.totalPlays;
-  tiles(byId('personal'), [['Сыграно раз', stats.totalPlays], ['Лучший счёт', stats.bestScore], ['Рекорд точности', stats.bestAccuracy + '/10']]);
-  const average = stats.totalPlays ? Math.round(stats.totalCorrectSum * 10 / stats.totalPlays) : 0;
-  tiles(byId('historySummary'), [['Всего игр', stats.totalPlays], ['Средняя точность', average + '%'], ['Лучший счёт', stats.bestScore], ['Разбор / Блиц', stats.calmPlays + ' / ' + stats.blitzPlays]]);
-  byId('runs').replaceChildren(...stats.recentRuns.map(run => {
-    const entry = document.createElement('li');
-    entry.textContent = run.time + ' · ' + run.mode + ' · ' + run.correct + '/' + run.total + ' · ' + run.score + ' очк.';
-    return entry;
-  }));
-}
-
-function savePersonal() {
-  try { localStorage.setItem(storageKey, JSON.stringify(stats)); } catch {}
-  renderPersonal();
 }
 
 function screen(active) {
@@ -147,9 +126,7 @@ function tick() {
 }
 
 function answer(choice) {
-  if (answered || byId('game').hidden || byId('history').open) {
-    if (choice !== null || answered || byId('game').hidden) return;
-  }
+  if (answered || byId('game').hidden) return;
   answered = true;
   clearInterval(timer);
   const remaining = mode === 'blitz' ? Math.max(0, (deadline - performance.now()) / 1000) : 0;
@@ -189,19 +166,11 @@ function next() {
 function finish() {
   screen('result');
   playTone(784);
-  stats.totalPlays++;
-  stats[mode + 'Plays']++;
-  stats.bestScore = Math.max(stats.bestScore, score);
-  stats.bestAccuracy = Math.max(stats.bestAccuracy, correct);
-  stats.totalCorrectSum += correct;
-  stats.recentRuns.unshift({ id: Date.now(), time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }), mode: mode === 'blitz' ? 'Блиц' : 'Разбор', score, correct, total: questions.length });
-  stats.recentRuns = stats.recentRuns.slice(0, 10);
-  savePersonal();
   countGameEvent('done');
   countGameEvent(mode);
   countGameEvent('score-' + correct);
   byId('rank').textContent = correct >= 9 ? '🏆 Мастер нейро-сытости' : correct >= 6 ? '🔬 Исследователь FoodHackLab' : '🥗 На пути к осознанной тарелке';
-  tiles(byId('summary'), [['Точность', correct + '/10'], ['Очки', score], ['Макс. серия', bestStreak], ['Сыграно игр', stats.totalPlays]]);
+  tiles(byId('summary'), [['Точность', correct + '/10'], ['Очки', score], ['Макс. серия', bestStreak]]);
   byId('copyStatus').textContent = '';
 }
 
@@ -228,13 +197,6 @@ byId('sound').onclick = () => {
   byId('sound').setAttribute('aria-pressed', sound);
   playTone(420);
 };
-byId('local').onclick = () => byId('history').showModal();
-byId('clear').onclick = () => {
-  if (confirm('Удалить историю игр из этого браузера?')) {
-    stats = blank();
-    savePersonal();
-  }
-};
 document.querySelectorAll('.mode').forEach(button => {
   button.onclick = () => {
     mode = button.dataset.mode;
@@ -247,7 +209,7 @@ byId('myth').onclick = () => answer(false);
 byId('fact').onclick = () => answer(true);
 byId('next').onclick = next;
 document.addEventListener('keydown', event => {
-  if (byId('game').hidden || byId('history').open || event.repeat) return;
+  if (byId('game').hidden || event.repeat) return;
   if (!answered && (event.key === 'ArrowLeft' || event.key === 'ArrowRight')) {
     event.preventDefault();
     answer(event.key === 'ArrowRight');
@@ -267,4 +229,3 @@ for (const tip of cheat) {
   item.textContent = tip;
   byId('cheat').append(item);
 }
-renderPersonal();
