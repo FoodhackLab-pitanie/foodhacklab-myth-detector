@@ -109,7 +109,10 @@ function renderQuestion() {
   byId('question').textContent = statement;
   byId('feedback').hidden = true;
   byId('advance').hidden = true;
-  byId('tipDetails').open = false;
+  byId('roundProgress').style.width = ((round + 1) / questions.length * 100) + '%';
+  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    byId('question').animate?.([{ opacity: .4, transform: 'translateY(5px)' }, { opacity: 1, transform: 'translateY(0)' }], { duration: 250, easing: 'ease-out' });
+  }
   byId('answers').hidden = false;
   byId('next').textContent = round === questions.length - 1 ? 'Посмотреть результат →' : 'Следующий вопрос →';
   window.scrollTo(0, 0);
@@ -160,6 +163,9 @@ function answer(choice) {
   byId('truth').textContent = truth ? 'Это научный факт' : 'Это миф';
   byId('explanation').textContent = explanation;
   byId('tip').textContent = tip;
+  if (success && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    byId('score').animate?.([{ transform: 'scale(1)' }, { transform: 'scale(1.2)', color: '#f5cb83' }, { transform: 'scale(1)' }], { duration: 310, easing: 'ease-out' });
+  }
 }
 
 function next() {

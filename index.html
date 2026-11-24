@@ -17,9 +17,9 @@
 <meta name="twitter:card" content="summary_large_image">
 <title>FoodHackLab: Детектор мифов о питании</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Unbounded:wght@600;700&display=swap">
-<link rel="stylesheet" href="styles.css?v=4">
+<link rel="stylesheet" href="styles.css?v=6">
 <script defer src="counter.js"></script>
-<script defer src="game.js?v=5"></script>
+<script defer src="game.js?v=6"></script>
 </head>
 <body class="quiz">
 <header>
@@ -43,6 +43,7 @@
       <span id="clock" hidden><progress id="timeBar" max="15" value="15" aria-label="Осталось времени"></progress> <span id="seconds"></span></span>
       <strong>Очки <span id="score">0</span></strong>
     </div>
+    <div class="quiz-progress" aria-hidden="true"><div id="roundProgress"></div></div>
     <div id="card" class="panel section-gap">
       <span id="category" class="tag"></span>
       <h2 id="question" tabindex="-1"></h2>
@@ -53,7 +54,7 @@
       <div id="feedback" hidden>
         <h2 id="verdict" aria-live="polite"></h2><strong id="truth"></strong>
         <p id="explanation"></p>
-        <details id="tipDetails"><summary>Совет на каждый день</summary><p id="tip"></p></details>
+        <aside class="daily-tip" aria-labelledby="tipLabel"><h3 id="tipLabel">Совет дня</h3><p id="tip"></p></aside>
         
       </div>
     </div>
