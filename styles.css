@@ -5,3 +5,46 @@
 .row,.grid{display:flex;gap:.65rem;flex-wrap:wrap;align-items:center}.spread{justify-content:space-between}.grid>*{flex:1 1 10rem}.tile{background:#121815;border:1px solid #303630;border-radius:1rem;padding:.85rem;text-align:center}.tile b{display:block;font-size:1.35rem;color:#6ee7b7}.tag{display:inline-block;padding:.35rem .7rem;border:1px solid #77602a;border-radius:2rem;color:#fbbf24;font-size:.8rem}
 button{font:inherit;font-weight:700;color:inherit;background:#242d28;border:1px solid #414943;border-radius:.85rem;padding:.72rem .9rem;cursor:pointer}button:hover,button:focus-visible{border-color:#fbbf24}button.primary{background:linear-gradient(90deg,#f59e0b,#fb923c);color:#1c1917;border-color:transparent}.full{width:100%}.mode{text-align:left}.mode small{display:block;margin-top:.3rem}.mode[aria-pressed=true]{border-color:#34d399;background:#15352a}.section-gap{margin-top:1rem}.myth{color:#fda4af;background:#301e21}.fact{color:#6ee7b7;background:#173229}.illustration{display:inline-grid;place-items:center;font-size:2.2rem;background:#121815;border:1px solid #414943;border-radius:1rem;width:4.25rem;height:4.25rem;flex:none}.question{display:flex;align-items:center;gap:1rem;font-size:1.15rem}.good{color:#6ee7b7}.bad{color:#fda4af}progress{width:6rem;accent-color:#fbbf24}dialog{width:min(92vw,38rem);max-height:88vh;color:inherit}dialog::backdrop{background:#000b}[hidden]{display:none!important}.bar{height:.4rem;accent-color:#34d399;width:100%}li{margin-bottom:.35rem}
 @media(prefers-reduced-motion:reduce){.panel{animation:none}}
+
+/* Game layout, scoped so that the statistics dashboard keeps its own spacing. */
+.quiz {
+  min-height: 100svh;
+  background: radial-gradient(ellipse at top, #243730 0%, #111614 65%);
+}
+.quiz header, .quiz main { width: min(100% - 2rem, 35rem); }
+.quiz header { padding-block: max(.5rem, env(safe-area-inset-top)) .35rem; }
+.quiz .brand { font: 650 .9rem Inter, system-ui, sans-serif; }
+.quiz main { margin-block: 0; padding-block: .65rem max(.85rem, env(safe-area-inset-bottom)); }
+.quiz .panel { padding: clamp(.85rem, 3.5vw, 1.4rem); border-radius: 1.15rem; }
+.quiz h1, .quiz h2, .quiz h3 { font-family: Inter, system-ui, sans-serif; letter-spacing: -.02em; }
+.quiz h1 { font-size: clamp(1.45rem, 5.4vw, 2rem); font-weight: 650; line-height: 1.14; margin: .7rem 0 .5rem; text-wrap: balance; }
+.quiz p, .quiz li { line-height: 1.45; }
+.quiz #start p { font-size: .94rem; color: #d8d5ca; margin: 0 0 1rem; }
+.quiz button { min-height: 44px; font-weight: 600; padding: .52rem .7rem; }
+.quiz button.primary { background: #f4bd66; }
+.quiz button:focus-visible, .quiz summary:focus-visible { outline: 2px solid #f4bd66; outline-offset: 2px; }
+.quiz #sound { min-width: 44px; }
+.quiz #start .grid, .quiz #answers { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.quiz #start .mode { min-height: 60px; }
+.quiz #start .mode small { font-size: .74rem; }
+.round-bar { display: flex; align-items: center; flex-wrap: wrap; gap: .4rem .65rem; padding: .25rem .2rem; font-size: .82rem; color: #deded4; }
+.round-bar > :last-child { margin-inline-start: auto; }
+.round-bar strong { font-weight: 600; }
+.quiz #clock { display: inline-flex; align-items: center; gap: .3rem; font-variant-numeric: tabular-nums; }
+.quiz #timeBar { width: clamp(2.1rem, 12vw, 4rem); }
+.quiz #card { margin-top: .5rem; }
+.quiz .tag { background: #242b24; border-color: #484938; color: #eac784; padding: .22rem .55rem; font-size: .76rem; }
+.quiz #question { font-size: clamp(1.02rem, 4.3vw, 1.27rem); font-weight: 550; line-height: 1.4; margin: .65rem 0 .8rem; }
+.quiz #question:focus { outline: none; }
+.quiz #feedback { border-top: 1px solid #3b463d; padding-top: .65rem; font-size: .88rem; }
+.quiz #verdict { font-size: 1rem; font-weight: 650; margin: 0 0 .2rem; }
+.quiz #truth { font-size: .8rem; font-weight: 600; color: #d0d6ce; }
+.quiz #feedback p { margin: .45rem 0; }
+.quiz summary { cursor: pointer; color: #f4cd88; min-height: 44px; align-content: center; }
+.quiz #advance { position: sticky; bottom: 0; padding: .45rem 0 max(.45rem, env(safe-area-inset-bottom)); margin-top: .15rem; background: #151d19; }
+.quiz #summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.quiz .tile { padding: .6rem .35rem; }
+.quiz .tile b { font-size: 1.12rem; font-weight: 650; }
+@media (min-height: 560px) {
+  .quiz main:has(#start:not([hidden])) { margin-block: auto; }
+}

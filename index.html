@@ -7,45 +7,45 @@
 <meta property="og:locale" content="ru_RU">
 <meta property="og:site_name" content="FoodHackLab">
 <meta property="og:url" content="https://foodhacklab-pitanie.github.io/foodhacklab-myth-detector/">
-<meta property="og:title" content="Детектор мифов о сытости">
+<meta property="og:title" content="Детектор мифов о питании">
 <meta property="og:description" content="10 вопросов о еде и аппетите. Отличишь миф от факта?">
-<meta property="og:image" content="https://foodhacklab-pitanie.github.io/foodhacklab-myth-detector/telegram-food-cover.png">
-<meta property="og:image:type" content="image/png">
+<meta property="og:image" content="https://foodhacklab-pitanie.github.io/foodhacklab-myth-detector/nutrition-cover.jpg">
+<meta property="og:image:type" content="image/jpeg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Детектор мифов о сытости. Тарелка с курицей, киноа и свежими овощами.">
+<meta property="og:image:alt" content="Детектор мифов о питании. Тарелка с курицей, киноа и свежими овощами.">
 <meta name="twitter:card" content="summary_large_image">
-<title>FoodHackLab: Детектор мифов о сытости</title>
+<title>FoodHackLab: Детектор мифов о питании</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Unbounded:wght@600;700&display=swap">
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="styles.css?v=4">
 <script defer src="counter.js"></script>
-<script defer src="game.js"></script>
+<script defer src="game.js?v=4"></script>
 </head>
-<body>
+<body class="quiz">
 <header>
-  <div><strong class="brand">🔬 FoodHackLab</strong><br><small>Наука сытости</small></div>
+  <div><strong class="brand">🔬 FoodHackLab</strong></div>
   <button id="sound" type="button" aria-label="Звук" aria-pressed="true">🔊</button>
 </header>
 <main>
   <section id="start" class="panel">
-    <span class="tag">Интерактивный тест · 10 раундов</span>
-    <h1>Детектор мифов о сытости и переедании</h1>
-    <p>Проверьте, сможете ли вы отличить устойчивые диетические заблуждения от реальных фудхаков.</p>
+    <span class="tag">10 раундов</span>
+    <h1>Детектор мифов о питании</h1>
+    <p>Что влияет на аппетит, сытость и пищевые привычки? Отличите факты от мифов.</p>
     <div class="grid section-gap">
-      <button type="button" class="mode" data-mode="calm" aria-pressed="true">🧠 Вдумчивый разбор<small>Без таймера</small></button>
-      <button type="button" class="mode" data-mode="blitz" aria-pressed="false">⚡ Блиц-детектор<small>15 секунд на раунд</small></button>
+      <button type="button" class="mode" data-mode="calm" aria-pressed="true">Разбор<small>Без таймера</small></button>
+      <button type="button" class="mode" data-mode="blitz" aria-pressed="false">Блиц<small>15 секунд на раунд</small></button>
     </div>
-    <button id="begin" type="button" class="primary full section-gap">Начать проверку мифов →</button>
+    <button id="begin" type="button" class="primary full section-gap">Начать игру →</button>
   </section>
   <section id="game" hidden>
-    <div class="panel row spread">
+    <div class="round-bar">
       <strong id="round"></strong><span id="combo" class="tag" hidden></span>
       <span id="clock" hidden><progress id="timeBar" max="15" value="15" aria-label="Осталось времени"></progress> <span id="seconds"></span></span>
       <strong>Очки <span id="score">0</span></strong>
     </div>
     <div id="card" class="panel section-gap">
-      <div class="row spread"><span id="category" class="tag"></span><small>Свайп или клавиши ← / →</small></div>
-      <p class="question"><span id="emoji" class="illustration" aria-hidden="true"></span><span id="question"></span></p>
+      <span id="category" class="tag"></span>
+      <h2 id="question" tabindex="-1"></h2>
       <div id="answers" class="grid">
         <button type="button" id="myth" class="myth">✕ Это миф</button>
         <button type="button" id="fact" class="fact">✓ Это факт</button>
@@ -53,10 +53,11 @@
       <div id="feedback" hidden>
         <h2 id="verdict" aria-live="polite"></h2><strong id="truth"></strong>
         <p id="explanation"></p>
-        <div class="tile"><strong>💡 Фудхак на каждый день</strong><p id="tip"></p></div>
-        <button id="next" type="button" class="full section-gap">Следующий вопрос →</button>
+        <details id="tipDetails"><summary>Совет на каждый день</summary><p id="tip"></p></details>
+        
       </div>
     </div>
+    <div id="advance" hidden><button id="next" type="button" class="primary full">Следующий вопрос →</button></div>
   </section>
   <section id="result" class="panel" hidden>
     <span class="tag">Ваш результат</span><h2 id="rank"></h2>
@@ -72,6 +73,5 @@
     <p id="copyStatus" role="status"></p>
   </section>
 </main>
-<footer>FoodHackLab · Наука сытости</footer>
 </body>
 </html>

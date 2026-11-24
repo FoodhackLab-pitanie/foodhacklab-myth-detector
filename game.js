@@ -105,12 +105,15 @@ function renderQuestion() {
   answered = false;
   const [emoji, category, , statement] = questions[round];
   byId('round').textContent = (round + 1) + ' / ' + questions.length;
-  byId('emoji').textContent = emoji;
   byId('category').textContent = emoji + ' ' + category;
   byId('question').textContent = statement;
   byId('feedback').hidden = true;
+  byId('advance').hidden = true;
+  byId('tipDetails').open = false;
   byId('answers').hidden = false;
   byId('next').textContent = round === questions.length - 1 ? 'Посмотреть результат →' : 'Следующий вопрос →';
+  window.scrollTo(0, 0);
+  byId('question').focus({ preventScroll: true });
   if (mode === 'blitz') {
     deadline = performance.now() + 15000;
     tick();
@@ -150,6 +153,8 @@ function answer(choice) {
   byId('combo').textContent = '🔥 Серия ×' + streak;
   byId('answers').hidden = true;
   byId('feedback').hidden = false;
+  byId('advance').hidden = false;
+  byId('next').focus({ preventScroll: true });
   byId('verdict').className = success ? 'good' : 'bad';
   byId('verdict').textContent = success ? 'Точно в цель! +' + earned + ' очков' : timeout ? 'Время вышло!' : 'Попались на уловку!';
   byId('truth').textContent = truth ? 'Это научный факт' : 'Это миф';
@@ -165,17 +170,18 @@ function next() {
 
 function finish() {
   screen('result');
+  window.scrollTo(0, 0);
   playTone(784);
   countGameEvent('done');
   countGameEvent(mode);
   countGameEvent('score-' + correct);
-  byId('rank').textContent = correct >= 9 ? '🏆 Мастер нейро-сытости' : correct >= 6 ? '🔬 Исследователь FoodHackLab' : '🥗 На пути к осознанной тарелке';
+  byId('rank').textContent = correct >= 9 ? '🏆 Знаток питания' : correct >= 6 ? '🔬 Исследователь FoodHackLab' : '🥗 На пути к осознанной тарелке';
   tiles(byId('summary'), [['Точность', correct + '/10'], ['Очки', score], ['Макс. серия', bestStreak]]);
   byId('copyStatus').textContent = '';
 }
 
 function shareText() {
-  return '🔬 Я прошёл(а) «Детектор мифов о сытости» от FoodHackLab: ' + correct + '/10 верных ответов (' + score + ' очков)!\n\n' + cheat.join('\n');
+  return '🔬 Я прошёл(а) «Детектор мифов о питании» от FoodHackLab: ' + correct + '/10 верных ответов (' + score + ' очков)!\n\n' + cheat.join('\n');
 }
 
 const gameUrl = new URL('./', location.href).href;
