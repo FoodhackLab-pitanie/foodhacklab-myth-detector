@@ -169,3 +169,19 @@ export function applyMove(run, move) {
   updated[run.index] = { errors, passed, marks, lastWrong: wrong };
   return { ...run, stages: updated };
 }
+
+const normalize = value => value.normalize('NFC').trim().replace(/\s+/gu, ' ');
+const groupKey = value => value.toLocaleLowerCase('ru').replaceAll('ё', 'е')
+  .replace(/[‐‑‒–—−]/gu, '-').replace(/\s/gu, '');
+const groupPattern = /^(?=.*\p{N})[\p{L}\p{N} ._/‐‑‒–—-]+$/u;
+
+export function participantIdentity(data) {
+  if (!data || Object.keys(data).length !== 2 ||
+      typeof data.number !== 'string' || !/^\d{1,6}$/u.test(data.number) || Number(data.number) === 0)
+    throw new Error('Введите номер участника от 1 до 999999.');
+  if (typeof data.group !== 'string' || data.group.length > 32)
+    throw new Error('Введите номер учебной группы.');
+  const group = normalize(data.group);
+  if (!groupPattern.test(group)) throw new Error('Проверьте номер группы. Например, 23-ПО.');
+  return { number: Number(data.number), group, groupKey: groupKey(group) };
+}

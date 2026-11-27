@@ -1,23 +1,35 @@
-import { API_ORIGIN } from './config.mjs?v=3';
-import { stages, totalFor, scoreFor, PASS_SCORE, ERROR_COST, MAX_PER_STAGE } from './course.mjs';
+import { API_ORIGIN, FALLBACK_API_ORIGIN } from './config.mjs?v=4';
+import { stages, totalFor, scoreFor, PASS_SCORE, ERROR_COST, MAX_PER_STAGE, applyMove, newRun, participantIdentity } from './course.mjs?v=4';
 
 import { $, main, icon, esc, setMain, flash, labelFor } from './common.mjs';
+
+import { enqueue, loadPending, packetData, randomHex, sendPacket, storePending } from './sync.mjs?v=4';
 
 const storageKey = 'hall-training:attempt:v2';
 const MAX_SCORE = stages.length * MAX_PER_STAGE;
 let attempt = null;
 let participant = null;
-let pending = false;
 let selection;
 let grabbed;
 let feedback = '';
 let airTimer;
 let suppressClick = false;
-function storeAttempt() {
+const endpoints = [...new Set([API_ORIGIN, FALLBACK_API_ORIGIN || API_ORIGIN])];
+const outbox = loadPending();
+let syncing = false;
+let syncTimer;
+
+function storeAttempt(record = attempt) {
+  if (record) {
+    if (record.packets.length) outbox.set(record.id, record);
+    else outbox.delete(record.id);
+    record.storedLocally = storePending(record);
+  }
+  if (record !== attempt) return;
   try {
-    if (attempt) sessionStorage.setItem(storageKey, JSON.stringify({ ...attempt, participant }));
+    if (attempt) sessionStorage.setItem(storageKey, JSON.stringify(attempt));
     else sessionStorage.removeItem(storageKey);
-  } catch { /* The active tab can still finish the attempt. */ }
+  } catch { /* The outbox can retain the result even if session storage is disabled. */ }
 }
 
 function restore() {
@@ -25,33 +37,64 @@ function restore() {
     sessionStorage.removeItem('hall-training:attempt:v1');
     const saved = JSON.parse(sessionStorage.getItem(storageKey));
     if (!saved?.id || !saved?.key || !saved?.participant?.number || !saved?.run) return;
-    participant = saved.participant;
-    delete saved.participant;
-    attempt = saved;
+    const queued = outbox.get(saved.id);
+    attempt = queued?.key === saved.key && queued.revision >= saved.revision ? queued : saved;
+    attempt.packets ??= [];
+    participant = attempt.participant;
   } catch { /* A new attempt can still be opened. */ }
 }
 
-async function request(path, { data, key }) {
-  const headers = new Headers();
-  if (data) headers.set('Content-Type', 'application/json');
-  if (key) headers.set('Authorization', `Bearer ${key}`);
-  let response;
-  try {
-    response = await fetch(`${API_ORIGIN}/api/${path}`, {
-      method: data ? 'POST' : 'GET', headers, body: data ? JSON.stringify(data) : undefined,
-      signal: AbortSignal.timeout(12000),
-    });
-  } catch {
-    throw new Error('Сервер игры не ответил. Проверьте подключение и повторите действие.');
-  }
-  let result;
-  try { result = await response.json(); }
-  catch { throw new Error('Сервер игры недоступен. Попробуйте ещё раз.'); }
-  if (!response.ok && !result.run) throw Object.assign(new Error(result.error || 'Попробуйте ещё раз.'), { status: response.status });
-  return result;
+function updateSyncStatus() {
+  const message = $('#sync-status');
+  if (!message || !attempt) return;
+  const waiting = attempt.packets.length > 0;
+  message.textContent = !waiting ? 'Результат отправлен преподавателю.'
+    : attempt.rejected ? 'Автоматическая отправка не удалась. Скачайте файл и передайте преподавателю.'
+    : attempt.storedLocally ? 'Результат сохранён на устройстве и отправится, когда появится связь.'
+    : 'Результат пока открыт только в этой вкладке. Скачайте файл перед её закрытием.';
+  $('#sync-actions').hidden = !waiting;
 }
 
-const randomHex = bytes => Array.from(crypto.getRandomValues(new Uint8Array(bytes)), byte => byte.toString(16).padStart(2, '0')).join('');
+function scheduleSync(delay = 200) {
+  if (!syncTimer && outbox.size) syncTimer = setTimeout(() => void syncQueue(), delay);
+}
+
+async function syncQueue() {
+  clearTimeout(syncTimer);
+  syncTimer = undefined;
+  if (syncing) return;
+  syncing = true;
+  try {
+    for (const record of [...outbox.values()]) {
+      while (record.packets.length && !record.rejected) {
+        const packet = record.packets[0];
+        packet.sealed = true;
+        storeAttempt(record);
+        const result = await sendPacket(endpoints, packetData(record, packet));
+        if (result.sent) record.packets.shift();
+        else if (result.rejected) record.rejected = true;
+        else return;
+        storeAttempt(record);
+        updateSyncStatus();
+      }
+    }
+  } finally {
+    syncing = false;
+    updateSyncStatus();
+    if ([...outbox.values()].some(record => !record.rejected)) scheduleSync(15000);
+  }
+}
+
+function downloadAttempt() {
+  for (const packet of attempt.packets) packet.sealed = true;
+  storeAttempt();
+  const payload = { packets: attempt.packets.map(packet => packetData(attempt, packet)) };
+  const url = URL.createObjectURL(new Blob([JSON.stringify(payload)], { type: 'application/json' }));
+  const link = Object.assign(document.createElement('a'), { href: url, download: `hall-attempt-${attempt.id.slice(0, 8)}.json` });
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 const stepNo = index => String(index + 1).padStart(2, '0');
 
 function welcome(focus) {
@@ -91,37 +134,20 @@ function welcome(focus) {
       <div class="route-title"><h2 id="route-title">Чек-лист смены</h2><p>До 10 баллов за этап <span>·</span> −${ERROR_COST} за ошибку</p></div>
       <ol class="route-grid">${stages.map((stage, index) => `<li><span class="tile-icon">${icon(stage.icon)}</span><span class="tile-name">${stage.title}</span><span class="tile-no">${stepNo(index)}</span></li>`).join('')}</ol>
     </section>`, focus);
-  let ticket;
-  let submittedIdentity;
-  $('#registration').addEventListener('submit', async event => {
+  $('#registration').addEventListener('submit', event => {
     event.preventDefault();
-    if (pending) return;
     const values = Object.fromEntries(new FormData(event.target));
-    participant = Object.fromEntries(Object.entries(values).map(([key, value]) => [key, value.trim()]));
-    const identityKey = JSON.stringify(participant);
-    if (submittedIdentity !== identityKey) {
-      ticket = { id: randomHex(16), key: randomHex(32) };
-      submittedIdentity = identityKey;
-    }
-    pending = true;
-    const button = $('.start');
-    button.disabled = true;
-    button.textContent = 'Открываем смену…';
-    flash('');
     try {
-      const data = await request('attempts', { data: { id: ticket.id, participant }, key: ticket.key });
-      const { participant: savedParticipant, ...savedAttempt } = data;
-      participant = savedParticipant;
-      attempt = { ...ticket, ...savedAttempt };
+      const who = participantIdentity(Object.fromEntries(Object.entries(values).map(([key, value]) => [key, value.trim()])));
+      participant = { number: String(who.number), group: who.group };
+      attempt = { id: randomHex(16), key: randomHex(32), participant, run: newRun(), revision: 0, packets: [] };
+      enqueue(attempt);
       storeAttempt();
+      scheduleSync();
       clearSelection();
       play(true);
     } catch (failure) {
       flash(failure.message || 'Не удалось начать игру.');
-    } finally {
-      pending = false;
-      button.disabled = false;
-      button.textContent = 'Начать смену';
     }
   });
 }
@@ -242,20 +268,24 @@ function pick(stage, id) {
   play(false, true);
 }
 
-async function makeMove(type) {
-  if (pending) return;
-  pending = true;
+function makeMove(type) {
   const current = attempt.run.index;
   const oldScore = scoreFor(attempt.run.stages[current]?.errors ?? 0);
   const currentButton = $(type === 'check' ? '[data-check]' : '[data-next]');
   currentButton.disabled = true;
   flash('');
   try {
-    const result = await request(`attempts/${attempt.id}`, {
-      key: attempt.key, data: { revision: attempt.revision, move: { type, selection } },
-    });
-    attempt = { ...attempt, ...result };
+    const move = type === 'check' ? { type, selection } : { type };
+    const next = applyMove(attempt.run, move);
+    if (next === attempt.run) {
+      currentButton.disabled = false;
+      return;
+    }
+    enqueue(attempt, move);
+    attempt.revision += 1;
+    attempt.run = next;
     storeAttempt();
+    scheduleSync(650);
     if (attempt.run.index !== current) clearSelection();
     else if (type === 'check') {
       const row = attempt.run.stages[current];
@@ -275,10 +305,8 @@ async function makeMove(type) {
       target?.focus({ preventScroll: true });
     }
   } catch (failure) {
-    flash(failure.message || 'Сервер недоступен. Повторите действие.');
+    flash(failure.message || 'Не удалось проверить действие.');
     currentButton.disabled = false;
-  } finally {
-    pending = false;
   }
 }
 
@@ -291,7 +319,12 @@ function finish(focus) {
       <h1>${passed ? 'Зачёт получен' : 'Нужна новая попытка'}</h1>
       <div class="result-value">${score}<small> / ${MAX_SCORE}</small></div>
       <p>Для зачёта нужно набрать минимум ${PASS_SCORE} баллов. ${passed ? 'Зал готов к открытию.' : 'Разберите ошибки и пройдите чек-лист заново.'}</p>
-      <p class="save-note">${icon('check')} Результат сохранён</p>
+      <p class="save-note" id="sync-status" role="status"></p>
+      <div class="sync-actions" id="sync-actions" hidden>
+        <button class="secondary" type="button" data-sync>Повторить отправку</button>
+        <button class="secondary" type="button" data-download>Скачать файл попытки</button>
+        <p>Если результат долго не отправляется, передайте файл преподавателю.</p>
+      </div>
       <button class="primary" type="button" data-restart>${passed ? 'Пройти ещё раз' : 'Повторить попытку'}</button>
     </section>
     <section class="result-details"><h2>Результаты по этапам</h2><p class="muted">Участник №${esc(participant.number)} · группа ${esc(participant.group)}</p>
@@ -302,11 +335,22 @@ function finish(focus) {
       }).join('')}</ol>
     </section>
   </div>`, focus);
+  updateSyncStatus();
 }
 
 main.addEventListener('click', event => {
   const button = event.target.closest('button');
-  if (!button || pending || button.disabled) return;
+  if (!button || button.disabled) return;
+  if ('download' in button.dataset && attempt?.packets.length) {
+    downloadAttempt();
+    return;
+  }
+  if ('sync' in button.dataset && attempt) {
+    attempt.rejected = false;
+    storeAttempt();
+    void syncQueue();
+    return;
+  }
   if (suppressClick && (button.dataset.object || button.dataset.zone)) return;
   if ('restart' in button.dataset) {
     attempt = null;
@@ -337,7 +381,7 @@ main.addEventListener('change', event => {
 
 main.addEventListener('pointerdown', start => {
   const button = start.target.closest('[data-object]');
-  if (!button || button.disabled || pending || start.button !== 0 || !attempt) return;
+  if (!button || button.disabled || start.button !== 0 || !attempt) return;
   const stage = stages[attempt.run.index];
   const id = button.dataset.object;
   let ghost;
@@ -378,3 +422,8 @@ main.addEventListener('pointerdown', start => {
 restore();
 if (attempt) play();
 else welcome();
+window.addEventListener('online', () => void syncQueue());
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') void syncQueue();
+});
+scheduleSync();
