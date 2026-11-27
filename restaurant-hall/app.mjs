@@ -1,4 +1,4 @@
-import { API_ORIGIN } from './config.mjs';
+import { API_ORIGIN } from './config.mjs?v=3';
 import { stages, totalFor, scoreFor, PASS_SCORE, ERROR_COST, MAX_PER_STAGE } from './course.mjs';
 
 import { $, main, icon, esc, setMain, flash, labelFor } from './common.mjs';
@@ -35,10 +35,15 @@ async function request(path, { data, key }) {
   const headers = new Headers();
   if (data) headers.set('Content-Type', 'application/json');
   if (key) headers.set('Authorization', `Bearer ${key}`);
-  const response = await fetch(`${API_ORIGIN}/api/${path}`, {
-    method: data ? 'POST' : 'GET', headers, body: data ? JSON.stringify(data) : undefined,
-    signal: AbortSignal.timeout(12000),
-  });
+  let response;
+  try {
+    response = await fetch(`${API_ORIGIN}/api/${path}`, {
+      method: data ? 'POST' : 'GET', headers, body: data ? JSON.stringify(data) : undefined,
+      signal: AbortSignal.timeout(12000),
+    });
+  } catch {
+    throw new Error('Сервер игры не ответил. Проверьте подключение и повторите действие.');
+  }
   let result;
   try { result = await response.json(); }
   catch { throw new Error('Сервер игры недоступен. Попробуйте ещё раз.'); }
